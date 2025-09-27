@@ -5,6 +5,8 @@ import matplotlib
 matplotlib.use("TkAgg")
 
 import matplotlib.pyplot as plt
+from scipy.stats import mannwhitneyu
+import numpy as np
 
 
 @dataclass
@@ -47,12 +49,64 @@ with (open("toolwindow_data.csv", "r", encoding="utf-8", newline="") as f):
 avg_auto_time = sum(auto_durations) / len(auto_durations) if auto_durations else 0
 avg_manual_time = sum(manual_durations) / len(manual_durations) if manual_durations else 0
 
+print(f'Auto openings: {len(auto_durations)}')
+print(f'Manual openings: {len(manual_durations)}\n')
 
-print(f'Auto openings: {len(auto_durations)}\tManual openings: {len(manual_durations)}')
-print(f'{avg_auto_time=}\n{avg_manual_time=}')
+print(f'Median time for auto openings: {np.median(auto_durations)}')
+print(f'Median time for manual openings: {np.median(manual_durations)}\n')
 
-plt.hist(manual_durations, bins=20, density=True, alpha=0.5, label='Manual')
-plt.hist(auto_durations, bins=20, density=True, alpha=0.5, label='Auto')
+print(f'Average time for auto openings: {avg_auto_time}')
+print(f'Average time for manual openings: {avg_manual_time}\n')
+
+stat, p_value = mannwhitneyu(manual_durations, auto_durations, alternative='two-sided')
+
+print(f"\nMann-Whitney U statistic: {stat}")
+print(f"p-value: {p_value}")
+
+print(p_value)
+if p_value < 0.05:
+    print("The differences are statistically significant (p < 0.05)")
+else:
+    print("There are no statistically significant differences")
+
+
+def permutation_test_median(a, b, n=5000):
+    observed = np.median(a) - np.median(b)
+    combined = np.concatenate([a, b])
+    count = 0
+    for _ in range(n):
+        np.random.shuffle(combined)
+        a_perm = combined[:len(a)]
+        b_perm = combined[len(a):]
+        diff = np.median(a_perm) - np.median(b_perm)
+        if abs(diff) >= abs(observed):
+            count += 1
+    return (count + 1) / (n + 1)
+
+
+p_value = permutation_test_median(np.array(manual_durations), np.array(auto_durations))
+print("\nPermutation test p-value:", p_value)
+if p_value < 0.05:
+    print("The differences are statistically significant (p < 0.05)")
+else:
+    print("There are no statistically significant differences")
+
+
+def cliffs_delta(a, b):
+    gt = 0
+    lt = 0
+    for x in a:
+        gt += np.sum(x > b)
+        lt += np.sum(x < b)
+    n = len(a) * len(b)
+    return (gt - lt) / n
+
+delta = cliffs_delta(np.array(manual_durations), np.array(auto_durations))
+print("\nCliff's Delta:", delta)
+
+
+plt.hist(manual_durations, bins=50, density=True, alpha=0.5, label='Manual')
+plt.hist(auto_durations, bins=50, density=True, alpha=0.5, label='Auto')
 
 plt.xlabel("Time")
 plt.ylabel("Amount")
