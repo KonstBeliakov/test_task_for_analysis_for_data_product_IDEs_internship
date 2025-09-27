@@ -84,7 +84,7 @@ def permutation_test_median(a, b, n=5000):
     return (count + 1) / (n + 1)
 
 
-p_value = permutation_test_median(np.array(manual_durations), np.array(auto_durations))
+p_value = permutation_test_median(np.array(auto_durations), np.array(manual_durations))
 print("\nPermutation test p-value:", p_value)
 if p_value < 0.05:
     print("The differences are statistically significant (p < 0.05)")
@@ -104,9 +104,36 @@ def cliffs_delta(a, b):
 delta = cliffs_delta(np.array(manual_durations), np.array(auto_durations))
 print("\nCliff's Delta:", delta)
 
+max_value = 18_000_000
+print(f'\n\nAnalysis for openings with length less than {max_value}:')
 
-plt.hist(manual_durations, bins=50, density=True, alpha=0.5, label='Manual')
-plt.hist(auto_durations, bins=50, density=True, alpha=0.5, label='Auto')
+auto_durations_small = [duration for duration in auto_durations if duration <= max_value]
+auto_durations_big = [duration for duration in auto_durations if duration > max_value]
+
+manual_durations_small = [duration for duration in manual_durations if duration <= max_value]
+manual_durations_big = [duration for duration in manual_durations if duration > max_value]
+
+print(f'{len(auto_durations_small)=}')
+print(f'{len(manual_durations_small)=}')
+
+stat_small, p_value_small = mannwhitneyu(auto_durations_small, manual_durations_small, alternative='two-sided')
+print(f"\nMann-Whitney p-value for small durations: {p_value_small}")
+
+p_value = permutation_test_median(np.array(auto_durations_small), np.array(manual_durations_small))
+print("\nPermutation test p-value for small durations:", p_value)
+if p_value < 0.05:
+    print("The differences are statistically significant (p < 0.05)")
+else:
+    print("There are no statistically significant differences")
+
+
+# for all data:
+# plt.hist(manual_durations, bins=50, density=True, alpha=0.5, label='Manual')
+# plt.hist(auto_durations, bins=50, density=True, alpha=0.5, label='Auto')
+
+# only for short duration:
+plt.hist(manual_durations_small, bins=50, density=True, alpha=0.5, label='Manual')
+plt.hist(auto_durations_small, bins=50, density=True, alpha=0.5, label='Auto')
 
 plt.xlabel("Time")
 plt.ylabel("Amount")
